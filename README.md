@@ -35,18 +35,35 @@ Chrome extension playground for a **speech loop**:
 
 If `LanguageModel.availability()` is `available` and text prompts work, but `LanguageModel.create({ expectedInputs: [{ type: "audio" }] })` fails with `NotSupportedError`, you likely need an Origin Trial token.
 
+This repo intentionally does **not** commit Origin Trial tokens (they are tied to your local extension ID).
+
 Steps:
 
 1. Find your extension id: `chrome://extensions` → Speech Loop → Details → **ID**
-2. Register for the Origin Trial feature **AIPromptAPIMultimodalInput**
-3. Use origin: `chrome-extension://<your-extension-id>`
-4. Put the generated token into `manifest.json` (this repo does **not** commit a token):
+2. Register for the Origin Trial (Chrome Origin Trials dashboard)
+   - Feature: **Prompt API** (in the UI) / multimodal input (audio)
+   - Origin: `chrome-extension://<your-extension-id>`
+3. Put the token in **either** place:
+
+   **Option A (quick): edit `manifest.json` locally**
    ```json
    {
      "trial_tokens": ["<your token>"]
    }
    ```
-5. Reload the extension
+   Don’t commit it.
+
+   **Option B (team-friendly): create `manifest.local.json` (gitignored)**
+   Create a file `manifest.local.json`:
+   ```json
+   {
+     "trial_tokens": ["<your token>"]
+   }
+   ```
+   Then copy/paste the token into `manifest.json` before loading the extension.
+   (We keep the file so you can store the token locally without risking a commit.)
+
+4. Reload the extension
 
 (Origin Trial tokens expire; if it stops working later, regenerate the token.)
 

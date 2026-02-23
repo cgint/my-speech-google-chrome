@@ -7,3 +7,6 @@
 
 # OS
 Thumbs.db
+
+# Local-only extension config (do not commit)
+manifest.local.json
