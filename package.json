@@ -1,0 +1,8 @@
+{
+  "name": "my-speech-google-chrome",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-extension.mjs"
+  }
+}

@@ -60,10 +60,18 @@ Steps:
      "trial_tokens": ["<your token>"]
    }
    ```
-   Then copy/paste the token into `manifest.json` before loading the extension.
-   (We keep the file so you can store the token locally without risking a commit.)
+   Then build a local `dist/` folder containing a generated `manifest.json`.
 
-4. Reload the extension
+   Build:
+   ```bash
+   npm run build
+   ```
+
+4. Load the built extension
+
+   - `chrome://extensions` → **Load unpacked** → select `./dist`
+
+   (Re-run `npm run build` whenever you change `manifest.local.json`.)
 
 (Origin Trial tokens expire; if it stops working later, regenerate the token.)
 
