@@ -2,82 +2,108 @@
 
 Chrome extension playground for a **speech loop**:
 
-`STT (speech-to-text) → AI (Prompt API) → TTS (chrome.tts)`
+**STT (speech-to-text) → AI (Prompt API / Gemini Nano) → TTS (chrome.tts)**
 
-## What’s implemented
+This project is intentionally small: it’s a minimal vertical slice that records microphone audio in a Side Panel, transcribes it on-device (Prompt API multimodal audio), generates a short response, and speaks it back.
 
-- Side panel UI with a **Record** button
-- Mic audio recording via `getUserMedia` + `MediaRecorder`
-- On-device **transcription** using Chrome Extensions **Prompt API** (Gemini Nano) multimodal audio input
-- Response generation using Prompt API text prompting
-- Speaking the response via `chrome.tts`
+## Quickstart (recommended)
 
-## Load the extension
+### Requirements
+
+- **Google Chrome** (not Brave). In Brave, `LanguageModel` may not be exposed to extensions.
+- A recent Chrome version (this repo sets `minimum_chrome_version: 138`).
+- **Node.js** (for the small build script that injects your local Origin Trial token).
+
+### 1) Build the extension bundle (`dist/`)
+
+```bash
+npm run build
+```
+
+This generates a local `dist/` folder that Chrome can load.
+
+### 2) Load the extension
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
-3. **Load unpacked** → select this repo directory (`my-speech-google-chrome`)
-4. Click the extension icon to open the side panel
+3. Click **Load unpacked** → select `./dist`
+4. Click the extension’s toolbar icon to open the Side Panel
 
-## Notes / requirements
+### 3) Enable microphone permission
 
-- This uses Chrome’s **built-in AI** Prompt API (Gemini Nano). Availability depends on the browser.
-  - In **Brave**, `LanguageModel` may not be exposed at all.
-- If you see `Prompt API availability: downloadable`, Chrome has not downloaded the on-device model yet.
-  - Keep Chrome open and watch for any download/permission prompt in the browser UI.
-  - Check Chrome Settings for “AI” / “Built-in AI” / “Gemini Nano” download (some builds expose this at `chrome://settings/ai`).
-  - Optionally check `chrome://components` for an on-device model component and update it.
-- The upstream samples in `chrome-extensions-samples` include `trial_tokens` (Origin Trial) and sometimes a `key` in `manifest.json` for **multimodal input** demos.
-  - For **audio input** specifically, the sample `ai.gemini-on-device-audio-scribe` uses an Origin Trial token for feature `AIPromptAPIMultimodalInput`.
-  - In this repo, `manifest.json` contains `"trial_tokens": []` as a placeholder.
+When you click **Start recording**, Chrome will ask for microphone permission for the extension origin (`chrome-extension://...`). Set it to **Allow**.
 
-### Enabling multimodal audio input (Origin Trial)
+## Enabling multimodal audio (Origin Trial token)
 
-If `LanguageModel.availability()` is `available` and text prompts work, but `LanguageModel.create({ expectedInputs: [{ type: "audio" }] })` fails with `NotSupportedError`, you likely need an Origin Trial token.
+Text-only Prompt API can work without extra setup, but **multimodal audio input** commonly requires an Origin Trial token.
 
-This repo intentionally does **not** commit Origin Trial tokens (they are tied to your local extension ID).
+Symptom:
 
-Steps:
+- `await LanguageModel.availability()` returns `"available"`, but
+- `LanguageModel.create({ expectedInputs: [{ type: "audio" }] })` fails with **`NotSupportedError`**.
 
-1. Find your extension id: `chrome://extensions` → Speech Loop → Details → **ID**
-2. Register for the Origin Trial (Chrome Origin Trials dashboard)
-   - Feature: **Prompt API** (in the UI) / multimodal input (audio)
-   - Origin: `chrome-extension://<your-extension-id>`
-3. Put the token in **either** place:
+### Why tokens are not committed
 
-   **Option A (quick): edit `manifest.json` locally**
+Origin Trial tokens are tied to **your local extension ID** (`chrome-extension://<id>`), so committing a token would not work for other people cloning this repo.
+
+### Steps
+
+1. Load the extension once (from `./dist`) so Chrome assigns it an **ID**.
+   - Find it at: `chrome://extensions` → Speech Loop → **Details** → **ID**
+2. Register for the Origin Trial in the Chrome Origin Trials dashboard:
+   - https://developer.chrome.com/origintrials/
+   - Choose feature **Prompt API** (UI name). The generated token will typically list the underlying feature as `AIPromptAPIMultimodalInput`.
+   - Origin must be exactly:
+     ```
+     chrome-extension://<your-extension-id>
+     ```
+3. Create a local file `manifest.local.json` (it is gitignored):
    ```json
    {
      "trial_tokens": ["<your token>"]
    }
    ```
-   Don’t commit it.
-
-   **Option B (team-friendly): create `manifest.local.json` (gitignored)**
-   Create a file `manifest.local.json`:
-   ```json
-   {
-     "trial_tokens": ["<your token>"]
-   }
-   ```
-   Then build a local `dist/` folder containing a generated `manifest.json`.
-
-   Build:
+4. Rebuild + reload:
    ```bash
    npm run build
    ```
+   Then reload the extension in `chrome://extensions`.
 
-4. Load the built extension
+## Troubleshooting
 
-   - `chrome://extensions` → **Load unpacked** → select `./dist`
+### `LanguageModel is not available in this context`
 
-   (Re-run `npm run build` whenever you change `manifest.local.json`.)
+- You’re likely not running in Google Chrome, or Prompt API isn’t exposed/enabled in your build.
 
-(Origin Trial tokens expire; if it stops working later, regenerate the token.)
+### `Prompt API availability: downloadable` / `downloading`
 
-- For a production extension you must provide your own token and remove sample keys.
+Chrome is still downloading the on-device model.
+
+- Keep Chrome open and wait.
+- Check: `chrome://components` → **Optimization Guide On Device Model** should become **Up-to-date**.
+
+### Audio session fails with `NotSupportedError` (but text-only works)
+
+That’s the Origin Trial token issue (see section above). Make sure:
+
+- the token’s origin matches your exact `chrome-extension://<id>`
+- you rebuilt (`npm run build`) after updating `manifest.local.json`
+- you loaded **`./dist`** (not the repo root)
+
+### Microphone permission gets dismissed
+
+- Click the mic permission chip/icon in Chrome’s toolbar area and set the extension origin to **Allow**.
+- Also check macOS Privacy & Security → Microphone.
+
+## Repo structure
+
+- `manifest.json` (committed): token-free base manifest with `"trial_tokens": []`
+- `manifest.local.json` (not committed): your local Origin Trial token
+- `scripts/build-extension.mjs`: merges base manifest + local token and copies files into `dist/`
+- `dist/` (not committed): load this folder as the unpacked extension
 
 ## References
 
-- `IDEA.md` (collected notes)
-- `~/dev-external/chrome-extensions-samples/functional-samples/ai.gemini-on-device-audio-scribe`
+- `IDEA.md` (planning notes)
+- Chrome sample that inspired the multimodal audio flow:
+  - `~/dev-external/chrome-extensions-samples/functional-samples/ai.gemini-on-device-audio-scribe`
