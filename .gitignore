@@ -1,0 +1,9 @@
+.DS_Store
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+Thumbs.db

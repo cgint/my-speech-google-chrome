@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Speech Loop</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Speech Loop</h1>
+      <p class="muted">
+        Record → on-device transcription (Gemini Nano Prompt API) → response →
+        speak via chrome.tts
+      </p>
+    </header>
+
+    <section class="controls">
+      <button id="btnRecord" class="primary">Start recording</button>
+      <button id="btnStopTts" class="secondary" disabled>Stop speaking</button>
+    </section>
+
+    <section>
+      <h2>Status</h2>
+      <pre id="status" class="box"></pre>
+    </section>
+
+    <section>
+      <h2>Transcript</h2>
+      <pre id="transcript" class="box"></pre>
+    </section>
+
+    <section>
+      <h2>AI response</h2>
+      <pre id="response" class="box"></pre>
+    </section>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
