@@ -1,1 +1,2 @@
+chrome-extension://<extension-id>/
 https://developer.chrome.com/origintrials/#/registration/7586260795747467265
