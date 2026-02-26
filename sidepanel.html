@@ -7,32 +7,65 @@
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body>
-    <header>
+    <section class="feature">
+      <h1>Speech Settings</h1>
+      <p class="muted">Applies to Speech Loop and Read Selected Text.</p>
+
+      <div class="field-row">
+        <label for="outputLanguageSelect">Output language (both features)</label>
+        <select id="outputLanguageSelect">
+          <option value="en">English (en)</option>
+          <option value="de">Deutsch (de)</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="feature">
       <h1>Speech Loop</h1>
       <p class="muted">
         Record → on-device transcription (Gemini Nano Prompt API) → response →
         speak via chrome.tts
       </p>
-    </header>
 
-    <section class="controls">
-      <button id="btnRecord" class="primary">Start recording</button>
-      <button id="btnStopTts" class="secondary" disabled>Stop speaking</button>
+      <div class="controls">
+        <button id="btnRecord" class="primary">Start recording</button>
+        <button id="btnStopTtsLoop" class="secondary" disabled>Stop speaking</button>
+      </div>
+
+      <section>
+        <h2>Status</h2>
+        <pre id="statusLoop" class="box"></pre>
+      </section>
+
+      <section>
+        <h2>Transcript</h2>
+        <pre id="transcriptLoop" class="box"></pre>
+      </section>
+
+      <section>
+        <h2>AI response</h2>
+        <pre id="responseLoop" class="box"></pre>
+      </section>
     </section>
 
-    <section>
-      <h2>Status</h2>
-      <pre id="status" class="box"></pre>
-    </section>
+    <section class="feature">
+      <h1>Read Selected Text</h1>
+      <p class="muted">Read aloud the text selected on the currently active website tab.</p>
 
-    <section>
-      <h2>Transcript</h2>
-      <pre id="transcript" class="box"></pre>
-    </section>
+      <div class="controls">
+        <button id="btnReadSelection" class="primary">Read selected text</button>
+        <button id="btnStopTtsSelection" class="secondary" disabled>Stop speaking</button>
+      </div>
 
-    <section>
-      <h2>AI response</h2>
-      <pre id="response" class="box"></pre>
+      <section>
+        <h2>Status</h2>
+        <pre id="statusSelection" class="box"></pre>
+      </section>
+
+      <section>
+        <h2>Selected text</h2>
+        <pre id="selectedTextOutput" class="box"></pre>
+      </section>
     </section>
 
     <script src="sidepanel.js"></script>

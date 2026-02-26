@@ -13,7 +13,8 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-  "permissions": ["sidePanel", "tts"],
+  "permissions": ["sidePanel", "tts", "activeTab", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
 
   "trial_tokens": []
 }
