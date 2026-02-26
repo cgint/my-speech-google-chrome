@@ -22,6 +22,9 @@ const elSummaryOutput = document.getElementById('summaryOutput');
 const STORAGE_KEY_OUTPUT_LANGUAGE = 'outputLanguage';
 const SUPPORTED_OUTPUT_LANGUAGES = ['en', 'de'];
 
+const featureSections = [...document.querySelectorAll('details.feature')];
+const outputLanguageBadge = document.getElementById('outputLanguageBadge');
+
 let mediaStream = null;
 let recorder = null;
 let chunks = [];
@@ -52,6 +55,48 @@ function appendSelectionStatus(text) {
 
 function setSummaryStatus(text) {
   elStatusSummary.textContent = text;
+}
+
+let isSyncingFeatureSections = false;
+
+function toFeatureSection(element) {
+  return element?.closest?.('details.feature') || null;
+}
+
+function setActiveFeatureSection(sectionToActivate) {
+  if (!sectionToActivate) return;
+  if (!featureSections.length) return;
+  if (isSyncingFeatureSections) return;
+
+  isSyncingFeatureSections = true;
+  featureSections.forEach((section) => {
+    section.open = section === sectionToActivate;
+  });
+  isSyncingFeatureSections = false;
+}
+
+function initializeFeatureSections() {
+  if (!featureSections.length) return;
+
+  const openSections = featureSections.filter((section) => section.open);
+  if (openSections.length > 1) {
+    setActiveFeatureSection(openSections[0]);
+  }
+
+  featureSections.forEach((section) => {
+    section.addEventListener('toggle', () => {
+      if (isSyncingFeatureSections) return;
+
+      if (section.open) {
+        setActiveFeatureSection(section);
+      }
+    });
+  });
+}
+
+function openFeatureForElement(element) {
+  const section = toFeatureSection(element);
+  setActiveFeatureSection(section);
 }
 
 function appendSummaryStatus(text) {
@@ -539,6 +584,11 @@ async function applyOutputLanguage(lang) {
   currentOutputLanguage = SUPPORTED_OUTPUT_LANGUAGES.includes(lang) ? lang : 'en';
   outputLanguageSelect.value = currentOutputLanguage;
 
+  if (outputLanguageBadge) {
+    outputLanguageBadge.textContent = currentOutputLanguage.toUpperCase();
+    outputLanguageBadge.setAttribute('aria-label', `Output language: ${currentOutputLanguage}`);
+  }
+
   // Recreate sessions on next use so output language changes take effect.
   sttSession = null;
   chatSession = null;
@@ -550,6 +600,7 @@ async function applyOutputLanguage(lang) {
 }
 
 btnRecord.addEventListener('click', async () => {
+  openFeatureForElement(btnRecord);
   try {
     if (recorder?.state === 'recording') {
       await stopRecordingAndRunLoop();
@@ -568,14 +619,17 @@ btnRecord.addEventListener('click', async () => {
 });
 
 btnReadSelection.addEventListener('click', async () => {
+  openFeatureForElement(btnReadSelection);
   await readSelectedTextAndSpeak();
 });
 
 btnSummarizeTab.addEventListener('click', async () => {
+  openFeatureForElement(btnSummarizeTab);
   await summarizeCurrentTab();
 });
 
 btnReadSummary.addEventListener('click', async () => {
+  openFeatureForElement(btnReadSummary);
   await readSummaryAndSpeak();
 });
 
@@ -599,6 +653,7 @@ outputLanguageSelect.addEventListener('change', async () => {
 
 async function init() {
   disableAllStopButtons();
+  initializeFeatureSections();
   setLoopStatus('Ready. Click “Start recording”.');
   setSelectionStatus('Ready. Select text on a webpage, then click “Read selected text”.');
   setSummaryStatus('Ready. Open a webpage, then click “Summarize”.');

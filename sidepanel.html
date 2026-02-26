@@ -7,87 +7,107 @@
     <link rel="stylesheet" href="sidepanel.css" />
   </head>
   <body>
-    <section class="feature">
-      <h1>Speech Settings</h1>
-      <p class="muted">Applies to Speech Loop, Read Selected Text, and Summarize Current Tab.</p>
-
-      <div class="field-row">
-        <label for="outputLanguageSelect">Output language (both features)</label>
-        <select id="outputLanguageSelect">
-          <option value="en">English (en)</option>
-          <option value="de">Deutsch (de)</option>
-        </select>
+    <details class="feature" id="feature-settings">
+      <summary>
+        <div class="summary-header">
+          <div>
+            <h1>Speech Settings</h1>
+            <p class="muted">Applies to all sections below.</p>
+          </div>
+          <span id="outputLanguageBadge" class="feature-badge" aria-live="polite"></span>
+        </div>
+      </summary>
+      <div class="feature-content">
+        <div class="field-row">
+          <label for="outputLanguageSelect">Output language (both features)</label>
+          <select id="outputLanguageSelect">
+            <option value="en">English (en)</option>
+            <option value="de">Deutsch (de)</option>
+          </select>
+        </div>
       </div>
-    </section>
+    </details>
 
-    <section class="feature">
-      <h1>Speech Loop</h1>
-      <p class="muted">
-        Record → on-device transcription (Gemini Nano Prompt API) → response →
-        speak via chrome.tts
-      </p>
+    <details class="feature" id="feature-speech-loop" open>
+      <summary>
+        <h1>Speech Loop</h1>
+        <p class="muted">
+          Record → on-device transcription (Gemini Nano Prompt API) → response →
+          speak via chrome.tts
+        </p>
+      </summary>
 
-      <div class="controls">
-        <button id="btnRecord" class="primary">Start recording</button>
-        <button id="btnStopTtsLoop" class="secondary" disabled>Stop speaking</button>
+      <div class="feature-content">
+        <div class="controls">
+          <button id="btnRecord" class="primary">Start recording</button>
+          <button id="btnStopTtsLoop" class="secondary" disabled>Stop speaking</button>
+        </div>
+
+        <section>
+          <h2>Status</h2>
+          <pre id="statusLoop" class="box"></pre>
+        </section>
+
+        <section>
+          <h2>Transcript</h2>
+          <pre id="transcriptLoop" class="box"></pre>
+        </section>
+
+        <section>
+          <h2>AI response</h2>
+          <pre id="responseLoop" class="box"></pre>
+        </section>
       </div>
+    </details>
 
-      <section>
-        <h2>Status</h2>
-        <pre id="statusLoop" class="box"></pre>
-      </section>
+    <details class="feature" id="feature-read-selection">
+      <summary>
+        <h1>Read Selected Text</h1>
+        <p class="muted">Read aloud the text selected on the currently active website tab.</p>
+      </summary>
 
-      <section>
-        <h2>Transcript</h2>
-        <pre id="transcriptLoop" class="box"></pre>
-      </section>
+      <div class="feature-content">
+        <div class="controls">
+          <button id="btnReadSelection" class="primary">Read selected text</button>
+          <button id="btnStopTtsSelection" class="secondary" disabled>Stop speaking</button>
+        </div>
 
-      <section>
-        <h2>AI response</h2>
-        <pre id="responseLoop" class="box"></pre>
-      </section>
-    </section>
+        <section>
+          <h2>Status</h2>
+          <pre id="statusSelection" class="box"></pre>
+        </section>
 
-    <section class="feature">
-      <h1>Read Selected Text</h1>
-      <p class="muted">Read aloud the text selected on the currently active website tab.</p>
-
-      <div class="controls">
-        <button id="btnReadSelection" class="primary">Read selected text</button>
-        <button id="btnStopTtsSelection" class="secondary" disabled>Stop speaking</button>
+        <section>
+          <h2>Selected text</h2>
+          <pre id="selectedTextOutput" class="box"></pre>
+        </section>
       </div>
+    </details>
 
-      <section>
-        <h2>Status</h2>
-        <pre id="statusSelection" class="box"></pre>
-      </section>
+    <details class="feature" id="feature-summarize-tab">
+      <summary>
+        <h1>Summarize Current Tab</h1>
+        <p class="muted">Create a short summary of the active tab and read only that summary aloud.</p>
+      </summary>
 
-      <section>
-        <h2>Selected text</h2>
-        <pre id="selectedTextOutput" class="box"></pre>
-      </section>
-    </section>
+      <div class="feature-content">
+        <div class="controls">
+          <button id="btnSummarizeTab" class="primary">Summarize</button>
+          <button id="btnReadSummary" class="secondary">Read summary</button>
+          <button id="btnStopTtsSummary" class="secondary" disabled>Stop speaking</button>
+        </div>
 
-    <section class="feature">
-      <h1>Summarize Current Tab</h1>
-      <p class="muted">Create a short summary of the active tab and read only that summary aloud.</p>
+        <section>
+          <h2>Status</h2>
+          <pre id="statusSummary" class="box"></pre>
+        </section>
 
-      <div class="controls">
-        <button id="btnSummarizeTab" class="primary">Summarize</button>
-        <button id="btnReadSummary" class="secondary">Read summary</button>
-        <button id="btnStopTtsSummary" class="secondary" disabled>Stop speaking</button>
+        <section>
+          <h2>Summary</h2>
+          <textarea id="summaryOutput" class="text-input" rows="7" placeholder="Your summary will appear here..."></textarea>
+        </section>
       </div>
-
-      <section>
-        <h2>Status</h2>
-        <pre id="statusSummary" class="box"></pre>
-      </section>
-
-      <section>
-        <h2>Summary</h2>
-        <textarea id="summaryOutput" class="text-input" rows="7" placeholder="Your summary will appear here..."></textarea>
-      </section>
-    </section>
+    </details>
 
     <script src="sidepanel.js"></script>
   </body>

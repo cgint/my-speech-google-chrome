@@ -11,17 +11,89 @@ body {
   background: #fff;
   border: 1px solid #e6e6e6;
   border-radius: 12px;
-  padding: 12px;
+  padding: 0;
   margin-bottom: 12px;
 }
 
+.feature-content {
+  padding: 0 12px 12px 12px;
+}
+
+summary {
+  cursor: pointer;
+  list-style: none;
+  display: block;
+  padding: 12px;
+  padding-right: 34px;
+  position: relative;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary:focus-visible {
+  outline: 2px solid #bdbdbd;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+summary::after {
+  content: '▸';
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  font-size: 20px;
+  line-height: 1;
+  color: #555;
+  pointer-events: none;
+}
+
+.feature[open] summary::after {
+  content: '▾';
+}
+
+.summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feature-badge {
+  background: #111;
+  color: #fff;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 34px;
+  text-align: center;
+  display: none;
+}
+
+.feature-badge:empty {
+  display: none;
+}
+
+.feature:not([open]) .feature-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feature:not([open]) .feature-content {
+  display: none;
+}
+
 h1 {
-  margin: 0 0 4px 0;
+  margin: 0;
   font-size: 18px;
 }
 
 .muted {
-  margin: 0 0 12px 0;
+  margin: 4px 0 0 0;
   color: #555;
   font-size: 13px;
 }
@@ -30,7 +102,6 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 12px;
 }
 
 .field-row label {
@@ -49,6 +120,7 @@ h1 {
 .controls {
   display: flex;
   gap: 8px;
+  margin-top: 12px;
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
