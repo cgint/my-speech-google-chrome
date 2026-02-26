@@ -2,8 +2,11 @@
 
 const btnRecord = document.getElementById('btnRecord');
 const btnReadSelection = document.getElementById('btnReadSelection');
+const btnSummarizeTab = document.getElementById('btnSummarizeTab');
+const btnReadSummary = document.getElementById('btnReadSummary');
 const btnStopTtsLoop = document.getElementById('btnStopTtsLoop');
 const btnStopTtsSelection = document.getElementById('btnStopTtsSelection');
+const btnStopTtsSummary = document.getElementById('btnStopTtsSummary');
 const outputLanguageSelect = document.getElementById('outputLanguageSelect');
 
 const elStatusLoop = document.getElementById('statusLoop');
@@ -12,6 +15,9 @@ const elResponseLoop = document.getElementById('responseLoop');
 
 const elStatusSelection = document.getElementById('statusSelection');
 const elSelectedTextOutput = document.getElementById('selectedTextOutput');
+
+const elStatusSummary = document.getElementById('statusSummary');
+const elSummaryOutput = document.getElementById('summaryOutput');
 
 const STORAGE_KEY_OUTPUT_LANGUAGE = 'outputLanguage';
 const SUPPORTED_OUTPUT_LANGUAGES = ['en', 'de'];
@@ -22,7 +28,10 @@ let chunks = [];
 
 let sttSession = null; // expectedInputs: audio
 let chatSession = null; // text-only
+let summarizeSession = null; // text-only summarization
 let currentOutputLanguage = 'en';
+
+const MAX_SUMMARY_SOURCE_CHARS = 16000;
 
 function setLoopStatus(text) {
   elStatusLoop.textContent = text;
@@ -41,6 +50,15 @@ function appendSelectionStatus(text) {
     (elStatusSelection.textContent ? `${elStatusSelection.textContent}\n` : '') + text;
 }
 
+function setSummaryStatus(text) {
+  elStatusSummary.textContent = text;
+}
+
+function appendSummaryStatus(text) {
+  elStatusSummary.textContent =
+    (elStatusSummary.textContent ? `${elStatusSummary.textContent}\n` : '') + text;
+}
+
 function resetLoopOutputs() {
   elTranscriptLoop.textContent = '';
   elResponseLoop.textContent = '';
@@ -49,6 +67,7 @@ function resetLoopOutputs() {
 function disableAllStopButtons() {
   btnStopTtsLoop.setAttribute('disabled', '');
   btnStopTtsSelection.setAttribute('disabled', '');
+  btnStopTtsSummary.setAttribute('disabled', '');
 }
 
 function pickAudioMimeType() {
@@ -160,6 +179,22 @@ async function getChatSession() {
   return chatSession;
 }
 
+async function getSummarizeSession() {
+  if (summarizeSession) return summarizeSession;
+  summarizeSession = await createLanguageModel({
+    temperature: 0.2,
+    topK: 1,
+    initialPrompts: [
+      {
+        role: 'system',
+        content:
+          'You summarize webpage content clearly and briefly. Prefer 4-8 bullet points with plain language.'
+      }
+    ]
+  });
+  return summarizeSession;
+}
+
 async function transcribeAudio(audioBlob) {
   const session = await getSttSession();
 
@@ -254,15 +289,20 @@ async function ensureSelectionPermissionGranted() {
   }
 }
 
+async function getActiveTab() {
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!activeTab?.id) {
+    throw new Error('No active tab found.');
+  }
+  return activeTab;
+}
+
 async function getSelectedTextFromActiveTab() {
   if (!chrome?.tabs || !chrome?.scripting) {
     throw new Error('Tab selection access is not available in this context.');
   }
 
-  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!activeTab?.id) {
-    throw new Error('No active tab found.');
-  }
+  const activeTab = await getActiveTab();
 
   await ensureSelectionPermissionGranted();
 
@@ -273,6 +313,51 @@ async function getSelectedTextFromActiveTab() {
 
   const rawText = results?.[0]?.result;
   return typeof rawText === 'string' ? rawText.trim() : '';
+}
+
+async function getPageTextFromActiveTab() {
+  if (!chrome?.tabs || !chrome?.scripting) {
+    throw new Error('Active-tab content access is not available in this context.');
+  }
+
+  const activeTab = await getActiveTab();
+  await ensureSelectionPermissionGranted();
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: activeTab.id },
+    func: (maxChars) => {
+      const title = document.title || '';
+      const bodyText = document.body?.innerText || '';
+      const normalized = `${title}\n\n${bodyText}`.replace(/\s+/g, ' ').trim();
+      return normalized.slice(0, maxChars);
+    },
+    args: [MAX_SUMMARY_SOURCE_CHARS]
+  });
+
+  const pageText = results?.[0]?.result;
+  return typeof pageText === 'string' ? pageText.trim() : '';
+}
+
+async function summarizeTabText(pageText) {
+  const session = await getSummarizeSession();
+
+  const prompt = [
+    'Summarize the following webpage content.',
+    'Output language: ' + currentOutputLanguage + '.',
+    'Keep it concise and useful for text-to-speech.',
+    'Use 4-8 bullet points and keep total length under 140 words when possible.',
+    '',
+    'Webpage content:',
+    pageText
+  ].join('\n');
+
+  const stream = session.promptStreaming(prompt);
+  let summary = '';
+  for await (const chunk of stream) {
+    summary += chunk;
+    elSummaryOutput.value = summary;
+  }
+  return summary.trim();
 }
 
 async function readSelectedTextAndSpeak() {
@@ -304,6 +389,64 @@ async function readSelectedTextAndSpeak() {
     appendSelectionStatus(`Details: ${detail}`);
   } finally {
     btnReadSelection.removeAttribute('disabled');
+  }
+}
+
+async function summarizeCurrentTab() {
+  btnSummarizeTab.setAttribute('disabled', '');
+  setSummaryStatus('Reading active tab content...');
+
+  try {
+    const pageText = await getPageTextFromActiveTab();
+
+    if (!pageText) {
+      setSummaryStatus(
+        'No readable text was found on the active tab. Open a regular webpage and try again.'
+      );
+      return;
+    }
+
+    elSummaryOutput.value = '';
+    appendSummaryStatus('Generating summary...');
+    const summary = await summarizeTabText(pageText);
+
+    if (!summary) {
+      setSummaryStatus('A summary could not be generated. Please try again.');
+      return;
+    }
+
+    elSummaryOutput.value = summary;
+    appendSummaryStatus('Summary ready. Click “Read summary” to speak it.');
+  } catch (e) {
+    const detail = String(e?.message || e);
+    setSummaryStatus(
+      'Could not summarize this tab. Use a regular website tab, allow site access when prompted, and try again.'
+    );
+    appendSummaryStatus(`Details: ${detail}`);
+  } finally {
+    btnSummarizeTab.removeAttribute('disabled');
+  }
+}
+
+async function readSummaryAndSpeak() {
+  btnReadSummary.setAttribute('disabled', '');
+
+  try {
+    const summary = (elSummaryOutput.value || '').trim();
+    if (!summary) {
+      setSummaryStatus('No summary available. Click “Summarize” first.');
+      return;
+    }
+
+    setSummaryStatus('Speaking summary...');
+    await speak(summary, btnStopTtsSummary);
+    appendSummaryStatus('Done.');
+  } catch (e) {
+    const detail = String(e?.message || e);
+    setSummaryStatus('Could not read the summary aloud.');
+    appendSummaryStatus(`Details: ${detail}`);
+  } finally {
+    btnReadSummary.removeAttribute('disabled');
   }
 }
 
@@ -399,9 +542,11 @@ async function applyOutputLanguage(lang) {
   // Recreate sessions on next use so output language changes take effect.
   sttSession = null;
   chatSession = null;
+  summarizeSession = null;
 
   appendLoopStatus(`Output language set to: ${currentOutputLanguage}`);
   appendSelectionStatus(`Output language set to: ${currentOutputLanguage}`);
+  appendSummaryStatus(`Output language set to: ${currentOutputLanguage}`);
 }
 
 btnRecord.addEventListener('click', async () => {
@@ -426,11 +571,23 @@ btnReadSelection.addEventListener('click', async () => {
   await readSelectedTextAndSpeak();
 });
 
+btnSummarizeTab.addEventListener('click', async () => {
+  await summarizeCurrentTab();
+});
+
+btnReadSummary.addEventListener('click', async () => {
+  await readSummaryAndSpeak();
+});
+
 btnStopTtsLoop.addEventListener('click', () => {
   stopSpeaking();
 });
 
 btnStopTtsSelection.addEventListener('click', () => {
+  stopSpeaking();
+});
+
+btnStopTtsSummary.addEventListener('click', () => {
   stopSpeaking();
 });
 
@@ -444,6 +601,7 @@ async function init() {
   disableAllStopButtons();
   setLoopStatus('Ready. Click “Start recording”.');
   setSelectionStatus('Ready. Select text on a webpage, then click “Read selected text”.');
+  setSummaryStatus('Ready. Open a webpage, then click “Summarize”.');
 
   const initialLanguage = await loadOutputLanguage();
   await applyOutputLanguage(initialLanguage);
@@ -453,4 +611,5 @@ init().catch((e) => {
   const msg = String(e?.message || e);
   setLoopStatus(`Initialization error: ${msg}`);
   setSelectionStatus(`Initialization error: ${msg}`);
+  setSummaryStatus(`Initialization error: ${msg}`);
 });

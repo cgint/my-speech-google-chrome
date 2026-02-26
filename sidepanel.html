@@ -9,7 +9,7 @@
   <body>
     <section class="feature">
       <h1>Speech Settings</h1>
-      <p class="muted">Applies to Speech Loop and Read Selected Text.</p>
+      <p class="muted">Applies to Speech Loop, Read Selected Text, and Summarize Current Tab.</p>
 
       <div class="field-row">
         <label for="outputLanguageSelect">Output language (both features)</label>
@@ -65,6 +65,27 @@
       <section>
         <h2>Selected text</h2>
         <pre id="selectedTextOutput" class="box"></pre>
+      </section>
+    </section>
+
+    <section class="feature">
+      <h1>Summarize Current Tab</h1>
+      <p class="muted">Create a short summary of the active tab and read only that summary aloud.</p>
+
+      <div class="controls">
+        <button id="btnSummarizeTab" class="primary">Summarize</button>
+        <button id="btnReadSummary" class="secondary">Read summary</button>
+        <button id="btnStopTtsSummary" class="secondary" disabled>Stop speaking</button>
+      </div>
+
+      <section>
+        <h2>Status</h2>
+        <pre id="statusSummary" class="box"></pre>
+      </section>
+
+      <section>
+        <h2>Summary</h2>
+        <textarea id="summaryOutput" class="text-input" rows="7" placeholder="Your summary will appear here..."></textarea>
       </section>
     </section>
 
